@@ -13,7 +13,7 @@ def main():
         print("4. BANK NIFTY")
         print("5. Exit")
 
-        choice = input("Enter your choice (1/2/3/4/5/6): ")
+        choice = input("Enter your choice (1/2/3/4/5): ")
 
         if choice == "1":
             nifty50.fetch_nifty_data()
