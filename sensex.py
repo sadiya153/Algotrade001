@@ -1,40 +1,38 @@
+# sensex.py
 import time
 from kiteconnect import KiteConnect
 import config
 
+# Initialize Kite API
 kite = KiteConnect(api_key=config.API_KEY)
 kite.set_access_token(config.ACCESS_TOKEN)
 
-def get_instrument_token(symbol, exchange="BSE"):
-    instruments = kite.instruments(exchange)
-    for instrument in instruments:
-        if instrument["tradingsymbol"] == symbol:
-            return instrument["instrument_token"]
-    print(f"⚠️ Instrument token not found for {symbol}")
-    return None
-
+# Function to find the nearest strike price
 def get_nearest_strike_price(price, step=100):
     return round(price / step) * step
 
+# Function to find option symbols for ATM CE/PE
 def get_option_symbol(atm_strike, option_type):
     instruments = kite.instruments("BFO")
     for instrument in instruments:
-        if "SENSEX" in instrument["tradingsymbol"] and str(atm_strike) in instrument["tradingsymbol"] and option_type in instrument["tradingsymbol"]:
+        if f"SENSEX" in instrument["tradingsymbol"] and str(atm_strike) in instrument["tradingsymbol"] and option_type in instrument["tradingsymbol"]:
             return instrument["tradingsymbol"]
     return None
 
-def fetch_live_sensex_data():
-    symbol = "SENSEX"
-    exchange = "BSE"
-
-    print(f"\nFetching live data for {symbol}...\n")
+# Function to fetch live SENSEX data
+def fetch_sensex_data():
+    print("\nFetching live data for SENSEX...\n")
 
     while True:
         try:
-            quote = kite.ltp(f"{exchange}:{symbol}")
-            sensex_price = quote[f"{exchange}:{symbol}"]["last_price"]
-            atm_strike = get_nearest_strike_price(sensex_price, step=100)
+            # Fetch index value
+            quote = kite.ltp("BSE:SENSEX")
+            sensex_price = quote["BSE:SENSEX"]["last_price"]
 
+            # Get nearest ATM strike price
+            atm_strike = get_nearest_strike_price(sensex_price)
+
+            # Get option symbols for CE and PE
             ce_symbol = get_option_symbol(atm_strike, "CE")
             pe_symbol = get_option_symbol(atm_strike, "PE")
 
@@ -43,33 +41,20 @@ def fetch_live_sensex_data():
                 time.sleep(5)
                 continue
 
+            # Fetch option prices
             option_data = kite.ltp([f"BFO:{ce_symbol}", f"BFO:{pe_symbol}"])
-
             ce_price = option_data[f"BFO:{ce_symbol}"]["last_price"]
             pe_price = option_data[f"BFO:{pe_symbol}"]["last_price"]
 
-            print("\n--- Live Market Data ---")
-            print(f"SENSEX Index Value  : {sensex_price}")
-            print(f"ATM Strike Price    : {atm_strike}")
+            # Display values
+            print("\n--- Live SENSEX Market Data ---")
+            print(f"SENSEX Index Value    : {sensex_price}")
+            print(f"ATM Strike Price      : {atm_strike}")
             print(f"ATM CE Value ({ce_symbol}): {ce_price}")
             print(f"ATM PE Value ({pe_symbol}): {pe_price}")
 
-            time.sleep(1)
+            time.sleep(1)  # Fetch every second
 
         except KeyboardInterrupt:
-            while True:
-                choice = input("\nDo you want to exit? (Yes/No): ").strip().lower()
-                if choice == "yes":
-                    print("\nExiting.")
-                    return
-                elif choice == "no":
-                    print("\nResuming data fetching...\n")
-                    break
-                else:
-                    print("Invalid input! Please enter 'Yes' or 'No'.")
-
-        except Exception as e:
-            print(f"Error fetching data: {e}")
-            time.sleep(5)
-
-fetch_live_sensex_data()
+            print("\nSENSEX data fetching stopped.")
+            break
