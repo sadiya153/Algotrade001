@@ -52,10 +52,5 @@ def fetch_banknifty_data():
         
        
 
-        # except KeyboardInterrupt:
-        #     print("\nBANK NIFTY data fetching stopped.")
-        #     break
-        # except Exception as e:
-        #     print(f"Error: {e}")
-        #     time.sleep(5)
+
 

@@ -2,7 +2,6 @@ import nifty50
 import sensex
 import finnifty
 import banknifty
-import bankex
 
 def main():
     while True:

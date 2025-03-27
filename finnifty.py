@@ -54,15 +54,5 @@ def fetch_finnifty_data():
         
             
 
-        # except KeyboardInterrupt:
-        #     exit_choice = input("\nDo you want to exit? (Yes/No): ").strip().lower()
-        #     if exit_choice in ["yes", "y"]:
-        #         print("Exiting FIN NIFTY data fetch.")
-        #         break
-        #     else:
-        #         print("Resuming fetching data...")
-
-        # except Exception as e:
-        #     print(f"⚠️ Error: {e}")
-        #     time.sleep(1)
+        
 
