@@ -35,22 +35,27 @@ def fetch_nifty_data():
 
             option_data = kite.quote([f"NFO:{ce_symbol}", f"NFO:{pe_symbol}"])
 
-            # print("\n🔍 DEBUG: Full API Response")
-            # print(option_data)
-
             ce_price = option_data[f"NFO:{ce_symbol}"]["last_price"]
             pe_price = option_data[f"NFO:{pe_symbol}"]["last_price"]
 
-            ce_vwap = option_data[f"NFO:{ce_symbol}"].get("average_price", "VWAP not available")
-            pe_vwap = option_data[f"NFO:{pe_symbol}"].get("average_price", "VWAP not available")
+            ce_vwap = option_data[f"NFO:{ce_symbol}"].get("average_price", None)
+            pe_vwap = option_data[f"NFO:{pe_symbol}"].get("average_price", None)
+
+            ce_volume = option_data[f"NFO:{ce_symbol}"].get("volume", 0)
+            pe_volume = option_data[f"NFO:{pe_symbol}"].get("volume", 0)
+
+            ce_vwma = round(ce_vwap * ce_volume / max(ce_volume, 1), 2) if ce_vwap else "VWMA not available"
+            pe_vwma = round(pe_vwap * pe_volume / max(pe_volume, 1), 2) if pe_vwap else "VWMA not available"
 
             print("\n--- Live NIFTY 50 Market Data ---")
             print(f"NIFTY 50 Index Value  : {nifty_price}")
             print(f"ATM Strike Price      : {atm_strike}")
             print(f"ATM CE Value ({ce_symbol}): {ce_price}")
             print(f"ATM PE Value ({pe_symbol}): {pe_price}")
-            print(f"VWAP CE ({ce_symbol})  : {ce_vwap}")
-            print(f"VWAP PE ({pe_symbol})  : {pe_vwap}")
+            print(f"VWAP CE ({ce_symbol})  : {ce_vwap if ce_vwap else 'VWAP not available'}")
+            print(f"VWAP PE ({pe_symbol})  : {pe_vwap if pe_vwap else 'VWAP not available'}")
+            print(f"VWMA CE ({ce_symbol})  : {ce_vwma}")
+            print(f"VWMA PE ({pe_symbol})  : {pe_vwma}")
 
             time.sleep(1)  
 
