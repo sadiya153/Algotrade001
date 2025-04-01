@@ -2,12 +2,11 @@ import time
 import pandas as pd
 from datetime import datetime  
 from kiteconnect import KiteConnect
-import config  
-
+import config
+from csv_writer import write_to_csv  # Import the function from csv_writer.py
 
 kite = KiteConnect(api_key=config.API_KEY)
 kite.set_access_token(config.ACCESS_TOKEN)
-
 
 all_instruments = pd.DataFrame(kite.instruments("NFO"))
 
@@ -32,11 +31,9 @@ def calculate_super_trend(df, period=10, multiplier=3):
     low = df["low"]
     close = df["close"]
 
-  
     df["TR"] = pd.concat([high - low, abs(high - close.shift()), abs(low - close.shift())], axis=1).max(axis=1)
     df["ATR"] = df["TR"].rolling(window=period).mean()
 
-   
     df["Upper_Band"] = (high + low) / 2 + (multiplier * df["ATR"])
     df["Lower_Band"] = (high + low) / 2 - (multiplier * df["ATR"])
 
@@ -61,7 +58,6 @@ def fetch_nifty_data():
 
             atm_strike = get_nearest_strike_price(nifty_price)
 
-           
             ce_symbol, ce_token = get_option_symbol(atm_strike, "CE")
             pe_symbol, pe_token = get_option_symbol(atm_strike, "PE")
 
@@ -92,11 +88,9 @@ def fetch_nifty_data():
                 ce_historical = kite.historical_data(ce_token, from_date, to_date, interval)
                 pe_historical = kite.historical_data(pe_token, from_date, to_date, interval)
 
-              
                 ce_df = pd.DataFrame(ce_historical)
                 pe_df = pd.DataFrame(pe_historical)
 
-             
                 if not ce_df.empty and not pe_df.empty:
                     super_trend_ce = calculate_super_trend(ce_df)
                     super_trend_pe = calculate_super_trend(pe_df)
@@ -109,10 +103,9 @@ def fetch_nifty_data():
                 super_trend_ce = "Super Trend not available"
                 super_trend_pe = "Super Trend not available"
 
-          
             current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-           
+            # Print data to console (optional)
             print("\n--- Live NIFTY 50 Market Data ---")
             print(f"Current Time           : {current_time}")
             print(f"NIFTY 50 Index Value   : {nifty_price}")
@@ -126,14 +119,31 @@ def fetch_nifty_data():
             print(f"Super Trend CE ({ce_symbol})  : {super_trend_ce}")
             print(f"Super Trend PE ({pe_symbol})  : {super_trend_pe}")
 
-            time.sleep(1) 
+            # Prepare data to write to CSV
+            data = {
+                "timestamp": current_time,
+                "nifty_value": nifty_price,
+                "atm_strike": atm_strike,
+                "ce_price": ce_price,
+                "pe_price": pe_price,
+                "ce_vwap": ce_vwap,
+                "pe_vwap": pe_vwap,
+                "ce_vwma": ce_vwma,
+                "pe_vwma": pe_vwma,
+                "super_trend_ce": super_trend_ce,
+                "super_trend_pe": super_trend_pe
+            }
+
+            write_to_csv(data)  # Write data to CSV
+
+            time.sleep(1)  # Wait for 1 second before fetching new data
 
         except KeyboardInterrupt:
             print("\nNIFTY 50 data fetching stopped.")
             break
         except Exception as e:
             print(f"Error: {e}")
-            time.sleep(1) 
+            time.sleep(1)
 
 if __name__ == "__main__":
     fetch_nifty_data()
