@@ -3,7 +3,7 @@ import pandas as pd
 from datetime import datetime  
 from kiteconnect import KiteConnect
 import config
-from csv_writer import write_to_csv  # Import the function from csv_writer.py
+from csv_writer import write_to_csv  
 
 kite = KiteConnect(api_key=config.API_KEY)
 kite.set_access_token(config.ACCESS_TOKEN)
@@ -105,7 +105,7 @@ def fetch_nifty_data():
 
             current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-            # Print data to console (optional)
+            
             print("\n--- Live NIFTY 50 Market Data ---")
             print(f"Current Time           : {current_time}")
             print(f"NIFTY 50 Index Value   : {nifty_price}")
@@ -119,7 +119,7 @@ def fetch_nifty_data():
             print(f"Super Trend CE ({ce_symbol})  : {super_trend_ce}")
             print(f"Super Trend PE ({pe_symbol})  : {super_trend_pe}")
 
-            # Prepare data to write to CSV
+            
             data = {
                 "timestamp": current_time,
                 "nifty_value": nifty_price,
@@ -134,9 +134,9 @@ def fetch_nifty_data():
                 "super_trend_pe": super_trend_pe
             }
 
-            write_to_csv(data)  # Write data to CSV
+            write_to_csv(data) 
 
-            time.sleep(1)  # Wait for 1 second before fetching new data
+            time.sleep(1) 
 
         except KeyboardInterrupt:
             print("\nNIFTY 50 data fetching stopped.")
