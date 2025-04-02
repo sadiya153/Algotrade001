@@ -136,14 +136,14 @@ def fetch_nifty_data():
 
             write_to_csv(data) 
 
-            time.sleep(1) 
+            time.sleep(60) 
 
         except KeyboardInterrupt:
             print("\nNIFTY 50 data fetching stopped.")
             break
         except Exception as e:
             print(f"Error: {e}")
-            time.sleep(1)
+            time.sleep(60)
 
 if __name__ == "__main__":
     fetch_nifty_data()
