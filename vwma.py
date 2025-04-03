@@ -1,89 +1,35 @@
-import time
-import pandas as pd
-from datetime import datetime, timedelta
 from kiteconnect import KiteConnect
-import config  
+import pandas as pd
 
-kite = KiteConnect(api_key=config.API_KEY)
-kite.set_access_token(config.ACCESS_TOKEN)
+# ---------------------- 1. Initialize Kite API ----------------------
+api_key = "tvvurc35y2qhc26f"
+access_token = "MYFjt9Z2douVU3cR6zwlGoB7vsuwue7z"
 
-def fetch_nifty_historical():
-    """
-    Fetches historical data for NIFTY 50 for the past 30 minutes.
-    """
-    to_date = datetime.now()
-    from_date = to_date - timedelta(minutes=30)  # Fetch last 30 minutes of data
-    interval = "minute"
+kite = KiteConnect(api_key=api_key)
+kite.set_access_token(access_token)
 
-    try:
-        historical_data = kite.historical_data(256265, from_date, to_date, interval)  # 256265 = NIFTY 50 token
-        df = pd.DataFrame(historical_data)
+# ---------------------- 2. Fetch Historical Data ----------------------
+instrument_token = 738561  # Example: Nifty 50
+from_date = "2024-02-01"  # Get at least 1+ month of data
+to_date = "2024-03-31"
+interval = "day"
 
-        if df.empty:
-            print("No historical data fetched.")
-            return None
+historical_data = kite.historical_data(instrument_token, from_date, to_date, interval)
+df = pd.DataFrame(historical_data)
 
-        return df
+# ---------------------- 3. Calculate VWMA ----------------------
+def calculate_vwma(df, period=20):
+    df["typical_price"] = (df["high"] + df["low"] + df["close"]) / 3
+    df["tpv"] = df["typical_price"] * df["volume"]
+    
+    df["VWMA"] = df["tpv"].rolling(window=period).sum() / df["volume"].rolling(window=period).sum()
+    
+    return df
 
-    except Exception as e:
-        print(f"Error fetching historical data: {e}")
-        return None
+df = calculate_vwma(df, period=20)
 
-def calculate_vwma(df, period=10):
-    """
-    Calculates the Volume-Weighted Moving Average (VWMA).
-    """
-    if df is None or df.empty:
-        print("No data available for VWMA calculation.")
-        return None
+# Drop NaN values (Optional)
+df.dropna(subset=["VWMA"], inplace=True)
 
-    # Ensure necessary columns exist
-    if 'volume' not in df.columns or 'close' not in df.columns:
-        print("Missing required columns in data")
-        return None
-
-    # Handle missing and zero values in volume
-    df['volume'] = df['volume'].replace(0, 1).fillna(1)  # Replace zero with 1
-    df['close'] = df['close'].ffill()  # Use forward fill for missing close prices
-
-    # Calculate VWMA
-    df["Weighted_Price"] = df["close"] * df["volume"]
-    df["VWMA"] = df["Weighted_Price"].rolling(window=period).sum() / df["volume"].rolling(window=period).sum()
-
-    return df["VWMA"].iloc[-1]  # Return latest VWMA value
-
-def fetch_live_nifty():
-    """
-    Fetches live NIFTY 50 price and calculates VWMA.
-    """
-    print("\nFetching Live Data for NIFTY 50 with VWMA...\n")
-
-    while True:
-        try:
-            # Fetch Live NIFTY Price
-            quote = kite.quote("NSE:NIFTY 50")
-            nifty_price = quote["NSE:NIFTY 50"]["last_price"]
-
-            # Fetch Historical Data
-            historical_df = fetch_nifty_historical()
-
-            # Calculate VWMA
-            vwma = calculate_vwma(historical_df)
-
-            # Get Current Time
-            current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-            # Print Data
-            print(f"{current_time} | NIFTY 50: {nifty_price} | VWMA: {vwma}")
-
-            time.sleep(60)  # Wait for 1 minute before fetching again
-
-        except KeyboardInterrupt:
-            print("\nStopping data fetch...")
-            break
-        except Exception as e:
-            print(f"Error: {e}")
-            time.sleep(60)
-
-if __name__ == "__main__":
-    fetch_live_nifty()
+# ---------------------- 4. Display Results ----------------------
+print(df[["date", "close", "VWMA"]].tail(10))  # Show last 10 rows
