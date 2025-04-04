@@ -7,7 +7,7 @@ import config
 kite = KiteConnect(api_key=config.API_KEY)
 kite.set_access_token(config.ACCESS_TOKEN)
 
-CSV_FILE = "D:\\ZasmLabs\\backend\\Algotrade001\\nifftyy_data.csv" 
+CSV_FILE = "/Users/sadiya/Desktop/Desktop - Sadiya’s MacBook Air/Algotrade001/nifftyy_data.csv"
 LOG_FILE = "buy.txt" 
 
 logged_timestamps = set()
