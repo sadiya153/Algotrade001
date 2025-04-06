@@ -6,3 +6,5 @@
 [2025-04-03 12:22:22] BUY CALL - CE price crossed above SuperTrend
 [2025-04-03 12:18:21] BUY CALL - CE price crossed above SuperTrend
 [2025-04-03 12:22:22] BUY CALL - CE price crossed above SuperTrend
+[2025-04-04 11:33:50] BUY CALL - CE price crossed above VWAP
+[2025-04-04 12:00:00] BUY CALL - CE price crossed above SuperTrend
