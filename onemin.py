@@ -5,6 +5,7 @@ from kiteconnect import KiteConnect
 import config
 from csv_writer import write_to_csv
 
+
 kite = KiteConnect(api_key=config.API_KEY)
 kite.set_access_token(config.ACCESS_TOKEN)
 
@@ -51,22 +52,41 @@ def wait_until_next_minute():
     now = datetime.now()
     next_minute = (now + timedelta(minutes=1)).replace(second=0, microsecond=0)
     wait_time = (next_minute - now).total_seconds()
-    # print(f"⌛ Waiting for {int(wait_time)} seconds to align with {next_minute.strftime('%H:%M:%S')}...")
     time.sleep(wait_time)
 
 def fetch_nifty_data():
     print("\nFetching live data for NIFTY 50...\n")
     
-    # wait_until_next_minute()  # align with next full minute
+    wait_until_next_minute()  # align with next full minute
 
     while True:
         try:
-            quote = kite.quote("NSE:NIFTY 50")
-            nifty_price = quote["NSE:NIFTY 50"]["last_price"]
-            nifty_open = quote["NSE:NIFTY 50"]["ohlc"]["open"]
-            nifty_high = quote["NSE:NIFTY 50"]["ohlc"]["high"]
-            nifty_low = quote["NSE:NIFTY 50"]["ohlc"]["low"]
-            nifty_close = quote["NSE:NIFTY 50"]["ohlc"]["close"]
+            interval = "minute"
+            from_date = pd.Timestamp.now() - pd.Timedelta(minutes=10)
+            to_date = pd.Timestamp.now()
+
+            nifty_historical = kite.historical_data(256265, from_date, to_date, interval)  # 256265 is the instrument token for NIFTY 50
+            nifty_df = pd.DataFrame(nifty_historical)
+
+            if nifty_df.empty:
+                print("No data fetched for NIFTY 50. Retrying...")
+                quote = kite.quote("NSE:NIFTY 50")
+                nifty_open = quote["NSE:NIFTY 50"]["ohlc"]["open"]
+                nifty_high = quote["NSE:NIFTY 50"]["ohlc"]["high"]
+                nifty_low = quote["NSE:NIFTY 50"]["ohlc"]["low"]
+                nifty_close = quote["NSE:NIFTY 50"]["ohlc"]["close"]
+
+                print(f"Open Price             : {nifty_open}")
+                print(f"High Price             : {nifty_high}")
+                print(f"Low Price              : {nifty_low}")
+                print(f"Close Price            : {nifty_close}")
+                continue
+
+            nifty_price = nifty_df.iloc[-1]["close"]
+            nifty_open = nifty_df.iloc[-1]["open"]
+            nifty_high = nifty_df.iloc[-1]["high"]
+            nifty_low = nifty_df.iloc[-1]["low"]
+            nifty_close = nifty_df.iloc[-1]["close"]
 
             atm_strike = get_nearest_strike_price(nifty_price)
 
@@ -91,10 +111,6 @@ def fetch_nifty_data():
 
             ce_vwma = round(ce_vwap * ce_volume / max(ce_volume, 1), 2) if isinstance(ce_vwap, (int, float)) else ce_vwap
             pe_vwma = round(pe_vwap * pe_volume / max(pe_volume, 1), 2) if isinstance(pe_vwap, (int, float)) else pe_vwap
-
-            interval = "minute"
-            from_date = pd.Timestamp.now() - pd.Timedelta(minutes=10)
-            to_date = pd.Timestamp.now()
 
             try:
                 ce_historical = kite.historical_data(ce_token, from_date, to_date, interval)
@@ -134,10 +150,6 @@ def fetch_nifty_data():
                 "timestamp": current_time,
                 "nifty_value": nifty_price,
                 "atm_strike": atm_strike,
-                # "nifty_open":nifty_open,
-                # "nifty_high":nifty_high,
-                # "nifty_low":nifty_low,
-                # "nifty_close":nifty_close,
                 "ce_price": ce_price,
                 "pe_price": pe_price,
                 "ce_vwap": ce_vwap,
