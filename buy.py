@@ -1,88 +1,72 @@
-import pandas as pd
 import time
-import os
+from datetime import datetime
+from kiteconnect import KiteConnect
 from kiteconnect import KiteConnect
 import config
-
+from datetime import datetime, timedelta
+ 
+ 
 kite = KiteConnect(api_key=config.API_KEY)
 kite.set_access_token(config.ACCESS_TOKEN)
-
-CSV_FILE = "/Users/sadiya/Desktop/Desktop - Sadiya’s MacBook Air/Algotrade001/nifftyy_data.csv"
-LOG_FILE = "buy.txt" 
-
-logged_timestamps = set()
-
-def log_message(message, timestamp):
-   
-    if timestamp in logged_timestamps:
-        return  
-
-    with open(LOG_FILE, "a") as log_file:
-        log_file.write(f"{message}\n")
-    print(message)  # Also print to console
-
-    logged_timestamps.add(timestamp)  # Store logged timestamp
-
-def read_csv():
-    try:
-        df = pd.read_csv(CSV_FILE)
-        return df
-    except FileNotFoundError:
-        print(f"File not found: {CSV_FILE}. Waiting for next update...")
-        return None
-    except Exception as e:
-        print(f"Error reading CSV: {e}")
-        return None
-
-def should_buy(previous_row, current_row):
-    ce_price = current_row["ce_price"]
-    ce_vwap = current_row["ce_vwap"]
-    ce_vwma = current_row["ce_vwma"]
-    super_trend_ce = current_row["super_trend_ce"]
-
-    prev_ce_price = previous_row["ce_price"]
-
-    buy_signal = None
-
-    if prev_ce_price < ce_vwap and ce_price > ce_vwap:
-        buy_signal = "BUY CALL - CE price crossed above VWAP"
-    elif prev_ce_price < ce_vwma and ce_price > ce_vwma:
-        buy_signal = "BUY CALL - CE price crossed above VWMA"
-    elif prev_ce_price < super_trend_ce and ce_price > super_trend_ce:
-        buy_signal = "BUY CALL - CE price crossed above SuperTrend"
-
-    return buy_signal
-
-def trade_bot():
-    print("\nStarting Buy Bot...\n")
-
-    while True:
-        df = read_csv()
-        if df is None or len(df) < 2:
-            print("Not enough data found in CSV. Waiting for next update...\n")
-            time.sleep(10)  # Wait before checking again
-            continue
-
-        # Check for crossing condition
-        for i in range(1, len(df)):  # Loop through all rows
-            previous_row = df.iloc[i - 1]
-            current_row = df.iloc[i]
-            timestamp = current_row["timestamp"]
-
-            # Print the row used for checking
-            print("\nLatest Row Used for Checking:")
-            print(current_row.to_string(), "\n")
-
-            buy_signal = should_buy(previous_row, current_row)
-            if buy_signal:
-                log_message(f"[{timestamp}] {buy_signal}", timestamp)
+ 
+log_file = "buy.txt"
+ 
+def log_action(message):
+    with open(log_file, "a") as file:
+        timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
+        file.write(f"[{timestamp}] {message}\n")
+    print(message)
+ 
+def get_trend(data):
+    if data[-1]['close'] > data[-2]['close']:
+        return "uptrend"
+    elif data[-1]['close'] < data[-2]['close']:
+        return "downtrend"
+    else:
+        return "sideways"
+ 
+def fetch_candle_data(instrument_token, interval="1minute"):
+    to_date = datetime.utcnow()
+    from_date = to_date - timedelta(minutes=2)
+    data = kite.historical_data(
+        instrument_token=instrument_token,
+        from_date=from_date,
+        to_date=to_date,
+        interval=interval
+    )
+    return data
+ 
+def main():
+    instrument_token = 738561
+    log_action("Script started. Monitoring trends...")
+    waiting_for_entry = True
+ 
+    while 1:
+        try:
+            data = fetch_candle_data(instrument_token)
+            if len(data) < 2:
+                log_action("Insufficient data. Waiting for more candles...")
+                time.sleep(60)
+                continue
+ 
+            trend = get_trend(data)
+            if waiting_for_entry:
+                log_action("Waiting to take entry in the market...")
+                if trend == "uptrend":
+                    log_action("Taking entry: Uptrend detected. Buying Call.")
+                    waiting_for_entry = False
+                elif trend == "downtrend":
+                    log_action("Taking entry: Downtrend detected. Buying Put.")
+                    waiting_for_entry = False
+                else:
+                    log_action("Sideways trend detected. Waiting for a clear trend.")
             else:
-                print("No Buy Signal.\n")
-
-        time.sleep(60)  # Wait before checking the next update
-
+                log_action("Already in position. Monitoring the market...")
+ 
+        except Exception as e:
+            log_action(f"Error: {e}")
+ 
+        time.sleep(60)
+ 
 if __name__ == "__main__":
-    try:
-        trade_bot()
-    except KeyboardInterrupt:
-        print("\n Buy bot stopped manually.")
+    main()
