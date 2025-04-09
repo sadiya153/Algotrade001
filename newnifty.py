@@ -123,3 +123,43 @@ def fetch_nifty_data():
  
 if __name__ == "__main__":
     fetch_nifty_data()
+
+    # Calculate VWMA (Volume Weighted Moving Average) for CE and PE
+    def calculate_vwma(data, price_key, vwap_key, period=10):
+        if len(data) < period:
+            return None
+        weighted_sum = sum(row[price_key] * row[vwap_key] for row in data[-period:])
+        volume_sum = sum(row[vwap_key] for row in data[-period:])
+        return weighted_sum / volume_sum if volume_sum != 0 else None
+
+    # Read the CSV file to calculate VWMA
+    try:
+        historical_data = pd.read_csv("nifttyy.csv")
+        vwma_ce = calculate_vwma(historical_data.to_dict('records'), "ce_price", "ce_vwap")
+        vwma_pe = calculate_vwma(historical_data.to_dict('records'), "pe_price", "pe_vwap")
+
+        print("\n" + " " * 32 + "--- VWMA Indicator ---")
+        print(f"{' ' * 28}VWMA CE: {vwma_ce}")
+        print(f"{' ' * 28}VWMA PE: {vwma_pe}")
+    except Exception as e:
+        print(f"Error calculating VWMA: {e}")
+        # Calculate and display VWMA after each data fetch
+        try:
+            historical_data = pd.read_csv("nifttyy.csv")
+            vwma_ce = calculate_vwma(historical_data.to_dict('records'), "ce_price", "ce_vwap")
+            vwma_pe = calculate_vwma(historical_data.to_dict('records'), "pe_price", "pe_vwap")
+
+            print("\n" + " " * 32 + "--- VWMA Indicator ---")
+            print(f"{' ' * 28}VWMA CE: {vwma_ce}")
+            print(f"{' ' * 28}VWMA PE: {vwma_pe}")
+        except Exception as e:
+            print(f"Error calculating VWMA: {e}")
+            # Calculate and display VWMA after each data fetch
+            try:
+                historical_data = pd.read_csv("nifttyy.csv")
+                vwma_ce = calculate_vwma(historical_data.to_dict('records'), "ce_price", "ce_vwap")
+                vwma_pe = calculate_vwma(historical_data.to_dict('records'), "pe_price", "pe_vwap")
+
+                print(f"VWMA CE                : {str(vwma_ce):<20}          | VWMA PE                : {vwma_pe}")
+            except Exception as e:
+                print(f"Error calculating VWMA: {e}")
