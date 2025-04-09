@@ -6,8 +6,8 @@ from datetime import datetime, timedelta
 # Initialize KiteConnect API
 API_KEY = "tvvurc35y2qhc26f"
 API_SECRET = "ib0skvn0vood7w5v5bezfigx5paa87gq"
-ACCESS_TOKEN = "vH4LGjXd6DCK8Lj0khYg3v9kndvigXqD"
-REQUEST_TOKEN = "nHO7osfA7aY3IIMJj4Uvu7ZuGBxs5YDj"
+ACCESS_TOKEN = "s5Fj5pXF3ZLY9Ovq62F7Z4ZmQXt1TZAr"
+REQUEST_TOKEN = "KoIpwGTgg0oJ11l1BdXt53iSwxkDzBS5"
 
 kite = KiteConnect(api_key=API_KEY)
 
